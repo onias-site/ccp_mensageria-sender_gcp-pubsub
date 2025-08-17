@@ -17,10 +17,10 @@ import com.ccp.decorators.CcpStringDecorator;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.http.CcpHttpHandler;
+import com.ccp.especifications.http.CcpHttpMethods;
 import com.ccp.especifications.http.CcpHttpResponseType;
 import com.ccp.especifications.main.authentication.CcpAuthenticationProvider;
 import com.ccp.especifications.mensageria.sender.CcpMensageriaSender;
-import com.ccp.http.CcpHttpMethods;
 import com.google.api.core.ApiFuture;
 import com.google.api.core.ApiFutureCallback;
 import com.google.api.core.ApiFutures;
@@ -31,11 +31,10 @@ import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
-enum GcpPubSubMensageriaSenderConstants  implements CcpJsonFieldName{
-	messages, Authorization, data
-	
-}
 class GcpPubSubMensageriaSender implements CcpMensageriaSender {
+	enum JsonFieldNames implements CcpJsonFieldName{
+		messages, Authorization, data
+	}
 //	private static String PROJECT_ID = ServiceOptions.getDefaultProjectId();;
 	private static String PROJECT_ID = "jn-hmg";
 
@@ -142,17 +141,17 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 				.getDependency(CcpAuthenticationProvider.class);
 		String token = authenticationProvider.getJwtToken();
 
-		CcpJsonRepresentation body = CcpOtherConstants.EMPTY_JSON.put(GcpPubSubMensageriaSenderConstants.messages, messages);
+		CcpJsonRepresentation body = CcpOtherConstants.EMPTY_JSON.put(JsonFieldNames.messages, messages);
 
 		CcpHttpHandler ccpHttpHandler = new CcpHttpHandler(200);
-		CcpJsonRepresentation authorization = CcpOtherConstants.EMPTY_JSON.put(GcpPubSubMensageriaSenderConstants.Authorization, "Bearer " + token);
+		CcpJsonRepresentation authorization = CcpOtherConstants.EMPTY_JSON.put(JsonFieldNames.Authorization, "Bearer " + token);
 		ccpHttpHandler.executeHttpRequest("sendPubsubMessage", url, CcpHttpMethods.POST, authorization, body, CcpHttpResponseType.singleRecord);
 		return this;
 	}
 
 	private CcpJsonRepresentation map(String message) {
 		String value = new CcpStringDecorator(message).text().asBase64().content;
-		CcpJsonRepresentation json = CcpOtherConstants.EMPTY_JSON.put(GcpPubSubMensageriaSenderConstants.data, value);
+		CcpJsonRepresentation json = CcpOtherConstants.EMPTY_JSON.put(JsonFieldNames.data, value);
 		return json;
 	}
 
