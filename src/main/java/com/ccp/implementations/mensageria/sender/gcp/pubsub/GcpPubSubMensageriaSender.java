@@ -78,7 +78,7 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 		}
 	}
 
-	public CcpMensageriaSender send(String topicId, String...msgs)
+	public CcpMensageriaSender sendToMensageria(String topicId, String...msgs)
 			{
 		Publisher publisher = getPublisher(topicId);
 
