@@ -143,9 +143,9 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 
 		CcpJsonRepresentation body = CcpOtherConstants.EMPTY_JSON.put(JsonFieldNames.messages, messages);
 
-		CcpHttpHandler ccpHttpHandler = new CcpHttpHandler(200);
+		CcpHttpHandler ccpHttpHandler = new CcpHttpHandler(200, url);
 		CcpJsonRepresentation authorization = CcpOtherConstants.EMPTY_JSON.put(JsonFieldNames.Authorization, "Bearer " + token);
-		ccpHttpHandler.executeHttpRequest("sendPubsubMessage", url, CcpHttpMethods.POST, authorization, body, CcpHttpResponseType.singleRecord);
+		ccpHttpHandler.executeHttpRequest("sendPubsubMessage", CcpHttpMethods.POST, authorization, body, CcpHttpResponseType.singleRecord);
 		return this;
 	}
 
