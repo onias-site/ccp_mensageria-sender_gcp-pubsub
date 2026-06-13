@@ -31,6 +31,11 @@ import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
+/**
+ * Implementação de {@code CcpMensageriaSender} para o GCP Pub/Sub. Mantém um pool de
+ * {@code Publisher} por tópico e oferece dois modos de envio: via SDK nativo ({@code sendToMensageria})
+ * e via REST autenticado com JWT ({@code send1}).
+ */
 class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 	enum JsonFieldNames implements CcpJsonFieldName{
 		messages, Authorization, data
