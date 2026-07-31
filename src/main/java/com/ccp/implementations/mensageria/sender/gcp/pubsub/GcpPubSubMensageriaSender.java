@@ -54,33 +54,25 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 			return publisher;
 		}
 		Publisher publisher = null;
-		try {
-			CcpStringDecorator ccpStringDecorator = new CcpStringDecorator("GOOGLE_APPLICATION_CREDENTIALS");
-			CcpInputStreamDecorator inputStreamFrom = ccpStringDecorator.inputStreamFrom();
-			InputStream fromEnvironmentVariablesOrClassLoaderOrFile = inputStreamFrom.fromEnvironmentVariablesOrClassLoaderOrFile();
-			GoogleCredentials credentials = GoogleCredentials.fromStream(fromEnvironmentVariablesOrClassLoaderOrFile);
-			FixedCredentialsProvider create = FixedCredentialsProvider.create(credentials);
-			publisher = Publisher.newBuilder(topicName).setCredentialsProvider(create).build();
-			publishers.put(topicName, publisher);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		CcpStringDecorator ccpStringDecorator = new CcpStringDecorator("GOOGLE_APPLICATION_CREDENTIALS");
+		CcpInputStreamDecorator inputStreamFrom = ccpStringDecorator.inputStreamFrom();
+		InputStream fromEnvironmentVariablesOrClassLoaderOrFile = inputStreamFrom.fromEnvironmentVariablesOrClassLoaderOrFile();
+		GoogleCredentials credentials = GoogleCredentials.fromStream(fromEnvironmentVariablesOrClassLoaderOrFile);
+		FixedCredentialsProvider create = FixedCredentialsProvider.create(credentials);
+		publisher = Publisher.newBuilder(topicName).setCredentialsProvider(create).build();
+		publishers.put(topicName, publisher);
 		return publisher;
 	}
 
 	public CcpMensageriaSender send2(Enum<?> topicName, String... msgs) {
 		Publisher publisher = getPublisher(topicName.name());
 
-		try {
-			for (String json : msgs) {
-				ByteString data = ByteString.copyFrom(json.getBytes(StandardCharsets.UTF_8));
-				PubsubMessage pubsubMessage = PubsubMessage.newBuilder().setData(data).build();
-				publisher.publish(pubsubMessage);
-			}
-			return this;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		for (String json : msgs) {
+			ByteString data = ByteString.copyFrom(json.getBytes(StandardCharsets.UTF_8));
+			PubsubMessage pubsubMessage = PubsubMessage.newBuilder().setData(data).build();
+			publisher.publish(pubsubMessage);
 		}
+		return this;
 	}
 
 	public CcpMensageriaSender sendToMensageria(String topicId, String...msgs)
