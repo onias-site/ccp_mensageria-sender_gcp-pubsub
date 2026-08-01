@@ -1,6 +1,5 @@
 package com.ccp.implementations.mensageria.sender.gcp.pubsub;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -13,8 +12,8 @@ import java.util.stream.Collectors;
 import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpInputStreamDecorator;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpStringDecorator;
 import com.ccp.decorators.CcpJsonRepresentation.CcpJsonFieldName;
+import com.ccp.decorators.CcpStringDecorator;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.http.CcpHttpHandler;
 import com.ccp.especifications.http.CcpHttpMethods;
@@ -56,10 +55,16 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 		Publisher publisher = null;
 		CcpStringDecorator ccpStringDecorator = new CcpStringDecorator("GOOGLE_APPLICATION_CREDENTIALS");
 		CcpInputStreamDecorator inputStreamFrom = ccpStringDecorator.inputStreamFrom();
-		InputStream fromEnvironmentVariablesOrClassLoaderOrFile = inputStreamFrom.fromEnvironmentVariablesOrClassLoaderOrFile();
-		GoogleCredentials credentials = GoogleCredentials.fromStream(fromEnvironmentVariablesOrClassLoaderOrFile);
-		FixedCredentialsProvider create = FixedCredentialsProvider.create(credentials);
-		publisher = Publisher.newBuilder(topicName).setCredentialsProvider(create).build();
+		
+		try (InputStream fromEnvironmentVariablesOrClassLoaderOrFile = inputStreamFrom.fromEnvironmentVariablesOrClassLoaderOrFile()) {
+			GoogleCredentials credentials = GoogleCredentials.fromStream(fromEnvironmentVariablesOrClassLoaderOrFile);
+			FixedCredentialsProvider create = FixedCredentialsProvider.create(credentials);
+			publisher = Publisher.newBuilder(topicName).setCredentialsProvider(create).build();
+			
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+
 		publishers.put(topicName, publisher);
 		return publisher;
 	}
