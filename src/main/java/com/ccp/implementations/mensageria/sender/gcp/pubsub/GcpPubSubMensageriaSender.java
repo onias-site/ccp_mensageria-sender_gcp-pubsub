@@ -62,7 +62,7 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 			publisher = Publisher.newBuilder(topicName).setCredentialsProvider(create).build();
 			
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new CcpErrorGcpPubSubPublisherBuild(e);
 		}
 
 		publishers.put(topicName, publisher);
@@ -157,4 +157,11 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 		return json;
 	}
 
+
+	@SuppressWarnings("serial")
+	private static class CcpErrorGcpPubSubPublisherBuild extends RuntimeException {
+		private CcpErrorGcpPubSubPublisherBuild(Throwable cause) {
+			super(cause);
+		}
+	}
 }
