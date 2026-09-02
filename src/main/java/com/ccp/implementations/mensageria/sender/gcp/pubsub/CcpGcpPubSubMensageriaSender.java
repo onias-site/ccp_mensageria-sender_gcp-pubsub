@@ -9,6 +9,7 @@ import com.ccp.especifications.mensageria.sender.CcpMensageriaSender;
 public class CcpGcpPubSubMensageriaSender implements CcpInstanceProvider<CcpMensageriaSender> {
 
 	public CcpMensageriaSender getInstance() {
-		return new GcpPubSubMensageriaSender();
+		GcpPubSubMensageriaSender gcpPubSubMensageriaSender = new GcpPubSubMensageriaSender();
+		return gcpPubSubMensageriaSender;
 	}
 }
