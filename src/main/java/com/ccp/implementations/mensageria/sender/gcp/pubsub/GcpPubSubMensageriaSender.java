@@ -30,6 +30,7 @@ import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
+import com.ccp.json.fields.validation.CcpJsonCommonsFields;
 import java.util.concurrent.Executor;/**
  * Implementação de {@code CcpMensageriaSender} para o GCP Pub/Sub. Mantém um pool de
  * {@code Publisher} por tópico e oferece dois modos de envio: via SDK nativo ({@code sendToMensageria})
@@ -40,7 +41,7 @@ import java.util.concurrent.Executor;/**
 
 class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 	enum JsonFieldNames implements CcpJsonFieldName{
-		messages, Authorization, data
+		messages, data
 	}
 //	private static String PROJECT_ID = ServiceOptions.getDefaultProjectId();;
 	private static String PROJECT_ID = "jn-hmg";
@@ -168,7 +169,7 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 
 		CcpHttpHandler ccpHttpHandler = new CcpHttpHandler(200, url);
 		String valorMais2 = "Bearer " + token;
-		CcpJsonRepresentation authorization = CcpOtherConstants.EMPTY_JSON.put(JsonFieldNames.Authorization, valorMais2);
+		CcpJsonRepresentation authorization = CcpOtherConstants.EMPTY_JSON.put(CcpJsonCommonsFields.Authorization, valorMais2);
 		ccpHttpHandler.executeHttpRequest("sendPubsubMessage", CcpHttpMethods.POST, authorization, body, CcpHttpResponseType.singleRecord);
 		return this;
 	}
