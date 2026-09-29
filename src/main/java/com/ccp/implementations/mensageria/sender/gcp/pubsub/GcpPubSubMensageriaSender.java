@@ -32,9 +32,9 @@ import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
 import com.ccp.json.fields.validation.CcpJsonCommonsFields;
 import java.util.concurrent.Executor;/**
- * Implementação de {@code CcpMensageriaSender} para o GCP Pub/Sub. Mantém um pool de
- * {@code Publisher} por tópico e oferece dois modos de envio: via SDK nativo ({@code sendToMensageria})
- * e via REST autenticado com JWT ({@code send1}).
+ * {@code CcpMensageriaSender} implementation for GCP Pub/Sub. Keeps a pool of
+ * {@code Publisher} per topic and offers two sending modes: via the native SDK ({@code sendToMensageria})
+ * and via REST authenticated with JWT ({@code send1}).
  */
  import java.util.stream.Stream;
  import com.ccp.decorators.CcpTextDecorator;
@@ -57,38 +57,38 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 			return publisher;
 		}
 		Publisher publisher = null;
-		CcpStringDecorator ccpStringDecorator = new CcpStringDecorator("GOOGLE_APPLICATION_CREDENTIALS");
-		CcpInputStreamDecorator inputStreamFrom = ccpStringDecorator.inputStreamFrom();
+		CcpStringDecorator credentialsVariableName = new CcpStringDecorator("GOOGLE_APPLICATION_CREDENTIALS");
+		CcpInputStreamDecorator credentialsInputStreamDecorator = credentialsVariableName.inputStreamFrom();
 		
-		try (InputStream fromEnvironmentVariablesOrClassLoaderOrFile = inputStreamFrom.fromEnvironmentVariablesOrClassLoaderOrFile()) {
-			GoogleCredentials credentials = GoogleCredentials.fromStream(fromEnvironmentVariablesOrClassLoaderOrFile);
-			FixedCredentialsProvider create = FixedCredentialsProvider.create(credentials);
-			Publisher.Builder newBuilder = Publisher.newBuilder(topicName);
-			Publisher.Builder setCredentialsProvider = newBuilder.setCredentialsProvider(create);
-			publisher = setCredentialsProvider.build();
+		try (InputStream credentialsStream = credentialsInputStreamDecorator.fromEnvironmentVariablesOrClassLoaderOrFile()) {
+			GoogleCredentials credentials = GoogleCredentials.fromStream(credentialsStream);
+			FixedCredentialsProvider credentialsProvider = FixedCredentialsProvider.create(credentials);
+			Publisher.Builder publisherBuilder = Publisher.newBuilder(topicName);
+			Publisher.Builder publisherBuilderWithCredentials = publisherBuilder.setCredentialsProvider(credentialsProvider);
+			publisher = publisherBuilderWithCredentials.build();
 			
 		} catch (Exception e) {
 			CcpErrorGcpPubSubPublisherBuild ccpErrorGcpPubSubPublisherBuild = new CcpErrorGcpPubSubPublisherBuild(e);
 			throw ccpErrorGcpPubSubPublisherBuild;
 		}
 
-		publishers.put(topicName, publisher);
+		publishers.put(topicName, publisher);
 		return publisher;
 	}
 
 	public CcpMensageriaSender send2(Enum<?> topicName, String... msgs) {
-		String topicNameName = topicName.name();
-		Publisher publisher = getPublisher(topicNameName);
+		String topicNameAsText = topicName.name();
+		Publisher publisher = getPublisher(topicNameAsText);
 
 		for (String json : msgs) {
 			byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
 			ByteString data = ByteString.copyFrom(bytes);
-			PubsubMessage.Builder newBuilder2 = PubsubMessage.newBuilder();
-			PubsubMessage.Builder setData = newBuilder2.setData(data);
-			PubsubMessage pubsubMessage = setData.build();
+			PubsubMessage.Builder messageBuilder = PubsubMessage.newBuilder();
+			PubsubMessage.Builder messageBuilderWithData = messageBuilder.setData(data);
+			PubsubMessage pubsubMessage = messageBuilderWithData.build();
 			publisher.publish(pubsubMessage);
 		}
-		return this;
+		return this;
 	}
 
 	public CcpMensageriaSender sendToMensageria(String topicId, String...msgs)
@@ -101,9 +101,9 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 
 			for (final String message : messages) {
 				ByteString data = ByteString.copyFromUtf8(message);
-				PubsubMessage.Builder newBuilder3 = PubsubMessage.newBuilder();
-				PubsubMessage.Builder setData2 = newBuilder3.setData(data);
-				PubsubMessage pubsubMessage = setData2.build();
+				PubsubMessage.Builder messageBuilder = PubsubMessage.newBuilder();
+				PubsubMessage.Builder messageBuilderWithData = messageBuilder.setData(data);
+				PubsubMessage pubsubMessage = messageBuilderWithData.build();
 
 				// Once published, returns a server-assigned message id (unique within the
 				// topic)
@@ -138,8 +138,8 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 			return this;
 		}
 		finally {
-			boolean publisherIgual = publisher == null;
-			if (publisherIgual) {
+			boolean publisherIsNull = publisher == null;
+			if (publisherIsNull) {
 				return this;
 			}
 			try {
@@ -151,15 +151,15 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 	}
 
 	public CcpMensageriaSender send1(Enum<?> topicName, String... msgs) {
-		List<String> asList = Arrays.asList(msgs);
-		Stream<String> stream = asList.stream();
-		var streamMap = stream.map(message -> this.map(message));
-		List<CcpJsonRepresentation> messages = streamMap
+		List<String> rawMessages = Arrays.asList(msgs);
+		Stream<String> rawMessagesStream = rawMessages.stream();
+		var encodedMessagesStream = rawMessagesStream.map(message -> this.map(message));
+		List<CcpJsonRepresentation> messages = encodedMessagesStream
 				.collect(Collectors.toList());
-				String valorMais = "https://pubsub.googleapis.com/v1/projects/" + PROJECT_ID;
-				String valorMaisMais = valorMais + "/topics/";
-				String valorMaisMaisMais = valorMaisMais + topicName;
-				String url = valorMaisMaisMais + ":publish";
+				String projectUrl = "https://pubsub.googleapis.com/v1/projects/" + PROJECT_ID;
+				String topicsUrl = projectUrl + "/topics/";
+				String topicUrl = topicsUrl + topicName;
+				String url = topicUrl + ":publish";
 
 		CcpAuthenticationProvider authenticationProvider = CcpDependencyInjection
 				.getDependency(CcpAuthenticationProvider.class);
@@ -168,16 +168,16 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 		CcpJsonRepresentation body = CcpOtherConstants.EMPTY_JSON.put(JsonFieldNames.messages, messages);
 
 		CcpHttpHandler ccpHttpHandler = new CcpHttpHandler(200, url);
-		String valorMais2 = "Bearer " + token;
-		CcpJsonRepresentation authorization = CcpOtherConstants.EMPTY_JSON.put(CcpJsonCommonsFields.Authorization, valorMais2);
+		String bearerToken = "Bearer " + token;
+		CcpJsonRepresentation authorization = CcpOtherConstants.EMPTY_JSON.put(CcpJsonCommonsFields.Authorization, bearerToken);
 		ccpHttpHandler.executeHttpRequest("sendPubsubMessage", CcpHttpMethods.POST, authorization, body, CcpHttpResponseType.singleRecord);
 		return this;
 	}
 
 	private CcpJsonRepresentation map(String message) {
-		CcpStringDecorator ccpStringDecorator2 = new CcpStringDecorator(message);
-		CcpTextDecorator ccpStringDecorator2Text = ccpStringDecorator2.text();
-		var asBase64 = ccpStringDecorator2Text.asBase64();
+		CcpStringDecorator messageDecorator = new CcpStringDecorator(message);
+		CcpTextDecorator messageText = messageDecorator.text();
+		var asBase64 = messageText.asBase64();
 		String value = asBase64.content;
 		CcpJsonRepresentation json = CcpOtherConstants.EMPTY_JSON.put(JsonFieldNames.data, value);
 		return json;

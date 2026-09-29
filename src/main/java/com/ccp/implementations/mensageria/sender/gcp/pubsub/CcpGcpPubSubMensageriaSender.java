@@ -4,7 +4,7 @@ import com.ccp.dependency.injection.CcpInstanceProvider;
 import com.ccp.especifications.mensageria.sender.CcpMensageriaSender;
 
 /**
- * Provedor de DI que expõe {@code GcpPubSubMensageriaSender} como implementação de {@code CcpMensageriaSender}.
+ * DI provider that exposes {@code GcpPubSubMensageriaSender} as the {@code CcpMensageriaSender} implementation.
  */
 public class CcpGcpPubSubMensageriaSender implements CcpInstanceProvider<CcpMensageriaSender> {
 
