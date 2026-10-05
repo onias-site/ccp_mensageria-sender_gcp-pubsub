@@ -31,23 +31,38 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
 import com.ccp.json.fields.validation.CcpJsonCommonsFields;
-import java.util.concurrent.Executor;/**
- * {@code CcpMensageriaSender} implementation for GCP Pub/Sub. Keeps a pool of
- * {@code Publisher} per topic and offers two sending modes: via the native SDK ({@code sendToMensageria})
- * and via REST authenticated with JWT ({@code send1}).
- */
+import java.util.concurrent.Executor;
+
  import java.util.stream.Stream;
  import com.ccp.decorators.CcpTextDecorator;
 
+/**
+ * {@code CcpMensageriaSender} implementation for GCP Pub/Sub. Keeps a cache of {@code Publisher} per topic and offers
+ * three sending modes: through the SDK ({@code sendToMensageria} and {@code send2}) and through REST authenticated with
+ * a JWT ({@code send1}).
+ */
 class GcpPubSubMensageriaSender implements CcpMensageriaSender {
+	/** Fields of the REST publish request. */
 	enum JsonFieldNames implements CcpJsonFieldName{
-		messages, data
+		/** The messages. */
+		messages,
+		/** The Base64 data of a message. */
+		data
 	}
 //	private static String PROJECT_ID = ServiceOptions.getDefaultProjectId();;
+	/** The GCP project of the REST publishing, fixed as {@code jn-hmg}. */
 	private static String PROJECT_ID = "jn-hmg";
 
+	/** Publishers cached by topic (never removed, even after being shut down). */
 	private static final Map<String, Publisher> publishers = new HashMap<>();
 
+	/**
+	 * Returns the cached publisher of the topic, or builds one with the credentials of
+	 * {@code GOOGLE_APPLICATION_CREDENTIALS} and caches it.
+	 * @param topicName the topic
+	 * @return the publisher
+	 * @throws CcpErrorGcpPubSubPublisherBuild when the publisher cannot be built
+	 */
 	private Publisher getPublisher(String topicName) {
 
 		boolean alreadyCalledBefore = publishers.containsKey(topicName);
@@ -76,6 +91,12 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 		return publisher;
 	}
 
+	/**
+	 * Publishes the messages through the SDK without waiting for the result.
+	 * @param topicName the topic
+	 * @param msgs the messages
+	 * @return this sender
+	 */
 	public CcpMensageriaSender send2(Enum<?> topicName, String... msgs) {
 		String topicNameAsText = topicName.name();
 		Publisher publisher = getPublisher(topicNameAsText);
@@ -91,6 +112,14 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 		return this;
 	}
 
+	/**
+	 * Publishes the messages through the SDK and then shuts the publisher down (waiting up to one minute). Every failure is
+	 * swallowed. Since the shut-down publisher stays cached, later calls for the same topic fail, and the failure is
+	 * swallowed too.
+	 * @param topicId the topic
+	 * @param msgs the serialized messages
+	 * @return this sender
+	 */
 	public CcpMensageriaSender sendToMensageria(String topicId, String...msgs)
 			{
 		Publisher publisher = getPublisher(topicId);
@@ -150,6 +179,12 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 		}
 	}
 
+	/**
+	 * Publishes the messages through the REST API, with a JWT of {@code CcpAuthenticationProvider}.
+	 * @param topicName the topic
+	 * @param msgs the messages
+	 * @return this sender
+	 */
 	public CcpMensageriaSender send1(Enum<?> topicName, String... msgs) {
 		List<String> rawMessages = Arrays.asList(msgs);
 		Stream<String> rawMessagesStream = rawMessages.stream();
@@ -174,6 +209,11 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 		return this;
 	}
 
+	/**
+	 * Builds the REST message: {@code data} with the message in Base64.
+	 * @param message the message
+	 * @return the REST message
+	 */
 	private CcpJsonRepresentation map(String message) {
 		CcpStringDecorator messageDecorator = new CcpStringDecorator(message);
 		CcpTextDecorator messageText = messageDecorator.text();
@@ -184,8 +224,13 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 	}
 
 
+	/** Raised when a Pub/Sub publisher cannot be built. */
 	@SuppressWarnings("serial")
 	private static class CcpErrorGcpPubSubPublisherBuild extends RuntimeException {
+		/**
+		 * Wraps the cause.
+		 * @param cause the original failure
+		 */
 		private CcpErrorGcpPubSubPublisherBuild(Throwable cause) {
 			super(cause);
 		}

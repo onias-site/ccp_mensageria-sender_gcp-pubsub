@@ -8,6 +8,10 @@ import com.ccp.especifications.mensageria.sender.CcpMensageriaSender;
  */
 public class CcpGcpPubSubMensageriaSender implements CcpInstanceProvider<CcpMensageriaSender> {
 
+	/**
+	 * Builds the GCP Pub/Sub implementation of {@code CcpMensageriaSender}.
+	 * @return a new {@code GcpPubSubMensageriaSender}
+	 */
 	public CcpMensageriaSender getInstance() {
 		GcpPubSubMensageriaSender gcpPubSubMensageriaSender = new GcpPubSubMensageriaSender();
 		return gcpPubSubMensageriaSender;
