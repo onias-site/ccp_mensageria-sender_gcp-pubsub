@@ -45,7 +45,7 @@ import com.ccp.json.fields.validation.CcpJsonCommonsFields;
  * <p>Until 2026-10-06 {@code sendToMensageria} shut the publisher down after each sending but kept it cached, so every
  * later sending to the same topic failed; a {@code catch (Throwable)} and an empty failure callback hid it, and the
  * messages were lost in silence. The publisher was also built with the bare topic id instead of the full topic name, and
- * the REST project was fixed as {@code jn-hmg}.</p>
+ * the project was fixed in the code.</p>
  */
 class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 	/** Fields of the REST publish request and of the credentials. */
