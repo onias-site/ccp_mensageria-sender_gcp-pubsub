@@ -71,11 +71,7 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 
 	/** Publishes through the Pub/Sub SDK. */
 	GcpPubSubMensageriaSender() {
-		this.publishing = (topicId, message) -> {
-			Publisher publisher = this.getPublisher(topicId);
-			ApiFuture<String> messageId = publisher.publish(message);
-			return messageId;
-		};
+		this.publishing = new GcpPubSubSdkPublishing(this);
 	}
 
 	/**
@@ -119,7 +115,7 @@ class GcpPubSubMensageriaSender implements CcpMensageriaSender {
 	 * @return the publisher
 	 * @throws CcpErrorGcpPubSubPublisherBuild when the publisher cannot be built
 	 */
-	private Publisher getPublisher(String topicId) {
+	Publisher getPublisher(String topicId) {
 		Publisher publisher = publishers.computeIfAbsent(topicId, x -> this.buildPublisher(topicId));
 		return publisher;
 	}
